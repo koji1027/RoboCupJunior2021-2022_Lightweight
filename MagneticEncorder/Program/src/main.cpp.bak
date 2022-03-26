@@ -1,0 +1,368 @@
+#include <Arduino.h>
+#include <stdint.h>
+#include <Wire.h>
+
+#define AS5600_DEV_ADDRESS   0x36
+#define AS5600_REG_RAW_ANGLE 0x0C
+#define I2C_Clock 8000000
+
+const int BLDC[3][2] = {{3,4},{5,6},{7,8}};
+
+uint8_t power = 20;
+uint16_t offset = 0;
+
+uint16_t angle_min[6] = {4096,4096,4096,4096,4096,4096};
+uint16_t angle_max[6] = {0,0,0,0,0,0};
+uint16_t angle_ave[6] = {0,0,0,0,0,0};
+uint16_t count = 0;
+
+void initialization();
+uint16_t EncoderRead();
+//uint16_t ElectricAngle(uint16_t RawAngle);
+uint16_t calibration();
+void motor_control(uint8_t _step,uint8_t _power);
+
+void setup() {
+  // put your setup code here, to run once:
+  initialization();
+  Serial.println("-----Start-----");
+  for (uint8_t i = 6;i > 0;i--) {
+    motor_control(i % 6,30);
+    delay(100);
+  }
+  offset = calibration();
+  delay(500);
+}
+
+//最大値 Step 0 : 580, Step 1 : 483, Step 2 : 379, Step 3 : 295, Step 4 : 200, Step 5 : 91
+//最小値 Step 0 : 585(0), Step 1 : 454, Step 2 : 366, Step 3 : 256, Step 4 : 159, Step 5 : 74
+//平均値 Step 0 : 583,Step 1 : 469, Step 2 : 373, Step 3 : 275, Step 4 : 180, Step 5 : 83
+
+void loop() {
+  uint16_t Angle = EncoderRead();
+  Angle -= offset;
+  Angle += 4096 * 2;
+  Angle %= 4096;
+  Angle %= 585;
+  if (Angle <=37 || Angle >= 529) {
+    motor_control(2,power);
+  }
+  else if (Angle >= 421 && Angle <= 528) {
+    motor_control(3,power);
+  }
+  else if (Angle >= 324 && Angle <= 420) {
+    motor_control(4,power);
+  }
+  else if (Angle >= 228 && Angle <= 323) {
+    motor_control(5,power);
+  }
+  else if (Angle >= 131 && Angle <= 227) {
+    motor_control(0,power);
+  }
+  else if (Angle >= 38 && Angle <= 130) {
+    motor_control(1,power);
+  }
+  /*while (count != 11) {
+  count++;
+  motor_control(0,30);
+  delay(300);
+  uint16_t RawAngle = EncoderRead();
+  RawAngle -= offset;
+  RawAngle += 4096 * 2;
+  RawAngle %= 4096;
+  RawAngle %= 585;
+  if (RawAngle < angle_min[0]) {
+    angle_min[0] = RawAngle;
+  }
+  if (RawAngle > angle_max[0]) {
+    angle_max[0] = RawAngle;
+  }
+  angle_ave[0] = (angle_ave[0] * (count - 1) + RawAngle) / count;
+  //Serial.print("Step 0 : ");
+  //Serial.print(RawAngle);
+  motor_control(1,30);
+  delay(300);
+  RawAngle = EncoderRead();
+  RawAngle -= offset;
+  RawAngle += 4096 * 2;
+  RawAngle %= 4096;
+  RawAngle %= 585;
+  if (RawAngle < angle_min[1]) {
+    angle_min[1] = RawAngle;
+  }
+  if (RawAngle > angle_max[1]) {
+    angle_max[1] = RawAngle;
+  }
+  angle_ave[1] = (angle_ave[1] * (count - 1) + RawAngle) / count;
+  //Serial.print(", Step 1 : ");
+  //Serial.print(RawAngle);
+  motor_control(2,30);
+  delay(300);
+  RawAngle = EncoderRead();
+  RawAngle -= offset;
+  RawAngle += 4096 * 2;
+  RawAngle %= 4096;
+  RawAngle %= 585;
+  if (RawAngle < angle_min[2]) {
+    angle_min[2] = RawAngle;
+  }
+  if (RawAngle > angle_max[2]) {
+    angle_max[2] = RawAngle;
+  }
+  angle_ave[2] = (angle_ave[2] * (count - 1) + RawAngle) / count;
+  //Serial.print(", Step 2 : ");
+  //Serial.print(RawAngle);
+  motor_control(3,30);
+  delay(300);
+  RawAngle = EncoderRead();
+  RawAngle -= offset;
+  RawAngle += 4096 * 2;
+  RawAngle %= 4096;
+  RawAngle %= 585;
+  if (RawAngle < angle_min[3]) {
+    angle_min[3] = RawAngle;
+  }
+  if (RawAngle > angle_max[3]) {
+    angle_max[3] = RawAngle;
+  }
+  angle_ave[3] = (angle_ave[3] * (count - 1) + RawAngle) / count;
+  //Serial.print(", Step 3 : ");
+  //Serial.print(RawAngle);
+  motor_control(4,30);
+  delay(300);
+  RawAngle = EncoderRead();
+  RawAngle -= offset;
+  RawAngle += 4096 * 2;
+  RawAngle %= 4096;
+  RawAngle %= 585;
+  if (RawAngle < angle_min[4]) {
+    angle_min[4] = RawAngle;
+  }
+  if (RawAngle > angle_max[4]) {
+    angle_max[4] = RawAngle;
+  }
+  angle_ave[4] = (angle_ave[4] * (count - 1) + RawAngle) / count;
+  //Serial.print(", Step 4 : ");
+  //Serial.print(RawAngle);
+  motor_control(5,30);
+  delay(300);
+  RawAngle = EncoderRead();
+  RawAngle -= offset;
+  RawAngle += 4096 * 2;
+  RawAngle %= 4096;
+  RawAngle %= 585;
+  if (RawAngle < angle_min[5]) {
+    angle_min[5] = RawAngle;
+  }
+  if (RawAngle > angle_max[5]) {
+    angle_max[5] = RawAngle;
+  }
+  angle_ave[5] = (angle_ave[5] * (count - 1) + RawAngle) / count;
+  //Serial.print(", Step 5 : ");
+  //Serial.println(RawAngle);
+  //Serial.print("最小値 Step 0 : ");
+  //Serial.print(angle_min[0]);
+  //Serial.print(", Step 1 : ");
+  //Serial.print(angle_min[1]);
+  //Serial.print(", Step 2 : ");
+  //Serial.print(angle_min[2]);
+  //Serial.print(", Step 3 : ");
+  //Serial.print(angle_min[3]);
+  //Serial.print(", Step 4 : ");
+  //Serial.print(angle_min[4]);
+  //Serial.print(", Step 5 : ");
+  //Serial.println(angle_min[5]);
+  delay(500);
+  }
+  Serial.print("平均値 Step 0 : ");
+  Serial.print(angle_ave[0]);
+  Serial.print(", Step 1 : ");
+  Serial.print(angle_ave[1]);
+  Serial.print(", Step 2 : ");
+  Serial.print(angle_ave[2]);
+  Serial.print(", Step 3 : ");
+  Serial.print(angle_ave[3]);
+  Serial.print(", Step 4 : ");
+  Serial.print(angle_ave[4]);
+  Serial.print(", Step 5 : ");
+  Serial.println(angle_ave[5]);
+  Serial.print("最大値 Step 0 : ");
+  Serial.print(angle_max[0]);
+  Serial.print(", Step 1 : ");
+  Serial.print(angle_max[1]);
+  Serial.print(", Step 2 : ");
+  Serial.print(angle_max[2]);
+  Serial.print(", Step 3 : ");
+  Serial.print(angle_max[3]);
+  Serial.print(", Step 4 : ");
+  Serial.print(angle_max[4]);
+  Serial.print(", Step 5 : ");
+  Serial.println(angle_max[5]);
+  Serial.print("最小値 Step 0 : ");
+  Serial.print(angle_min[0]);
+  Serial.print(", Step 1 : ");
+  Serial.print(angle_min[1]);
+  Serial.print(", Step 2 : ");
+  Serial.print(angle_min[2]);
+  Serial.print(", Step 3 : ");
+  Serial.print(angle_min[3]);
+  Serial.print(", Step 4 : ");
+  Serial.print(angle_min[4]);
+  Serial.print(", Step 5 : ");
+  Serial.println(angle_min[5]);
+  Serial.println("-----END-----");
+  while(1){}*/
+}
+
+void initialization() {
+  //pwm
+  TCCR2B = (TCCR2B & 0b11111000) | 0x01;  // 31.37255 [kHz]
+  TCCR3B = (TCCR3B & 0b11111000) | 0x01;  // 31.37255 [kHz]
+  TCCR4B = (TCCR4B & 0b11111000) | 0x01;  // 31.37255 [kHz]
+
+  //I2C
+  Wire.begin();
+  Wire.setClock(I2C_Clock);
+
+  //タイマー割込み
+  //絶対消さない!!!!!
+  /*TCCR1A  = 0;
+  TCCR1B  = 0;
+  TCCR1B |= (1 << WGM12) | (1 << CS12) | (1 << CS10);  //CTCmode //prescaler to 256
+  OCR1A   = 20000-1;
+  TIMSK1 |= (1 << OCIE1A);*/
+
+  //Serial
+  Serial.begin(115200);
+  
+  //BLDC pin
+  for (uint8_t i = 0;i < 3;i++) {
+    for (uint8_t j = 0;j < 2;j++) {
+      pinMode(BLDC[i][j],OUTPUT);
+    }
+  }
+  for (uint8_t i = 0;i < 3;i++) {
+    analogWrite(BLDC[i][0],0);
+    digitalWrite(BLDC[i][1],HIGH);
+  }
+  motor_control(0,0);
+  delay(3000);
+}
+
+uint16_t EncoderRead() {
+  Wire.beginTransmission(AS5600_DEV_ADDRESS);
+  Wire.write(AS5600_REG_RAW_ANGLE);
+  Wire.endTransmission(false);
+  Wire.requestFrom(AS5600_DEV_ADDRESS,2);
+  uint16_t RawAngle = 0;
+  RawAngle = ((uint16_t)Wire.read() << 8) & 0x0F00;
+  RawAngle |= (uint16_t)Wire.read();
+  if (RawAngle > 4096) {
+    RawAngle = EncoderRead();
+  }
+  return RawAngle;
+}
+
+/*uint16_t ElectricAngle(uint16_t RawAngle) { //0 ~ 4095
+  uint16_t elecAngle = RawAngle % 585;
+  elecAngle = map(elecAngle,0,584,0,359);
+  return elecAngle;
+}*/
+
+//Step n 実行後の角度 キャリブレーション済み 最小値取得
+//n = 0 >> 392, n = 1 >> 295, n = 2 >> 207
+//n = 3 >> 97,  n = 4 >> 0  , n = 5 >> 478
+
+uint16_t calibration(void) {
+  int offsetRaw[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+  motor_control(1, 30);
+  delay(100);
+  motor_control(0, 30);
+  delay(300);
+  offsetRaw[0] = EncoderRead();
+  motor_control(5, 30);
+  delay(100);
+  motor_control(0, 30);
+  delay(300);
+  offsetRaw[1] = EncoderRead();
+  motor_control(1, 30);
+  delay(100);
+  motor_control(0, 30);
+  delay(300);
+  offsetRaw[2] = EncoderRead();
+  motor_control(5, 30);
+  delay(100);
+  motor_control(0, 30);
+  delay(300);
+  offsetRaw[3] = EncoderRead();
+
+  return (offsetRaw[0] + offsetRaw[1] + offsetRaw[2] + offsetRaw[3]) / 4;
+}
+
+void motor_control(uint8_t _step, uint8_t _power) {
+  switch (_step) {
+    case 0:  // U→V
+      analogWrite(BLDC[0][0], _power);  // U_IN
+      analogWrite(BLDC[1][0], 0);       // V_IN
+      analogWrite(BLDC[2][0], 0);       // W_IN
+
+      digitalWrite(BLDC[0][1], HIGH);  // V_SD
+      digitalWrite(BLDC[1][1], HIGH);   // V_IN
+      digitalWrite(BLDC[2][1], LOW);  // W_IN
+      break;
+
+    case 1:  // W→V
+      analogWrite(BLDC[0][0], 0);
+      analogWrite(BLDC[1][0], 0);
+      analogWrite(BLDC[2][0], _power);
+
+      digitalWrite(BLDC[0][1], LOW);
+      digitalWrite(BLDC[1][1], HIGH);
+      digitalWrite(BLDC[2][1], HIGH);
+      break;
+
+    case 2:  // W→U
+      analogWrite(BLDC[0][0], 0);
+      analogWrite(BLDC[1][0], 0);
+      analogWrite(BLDC[2][0], _power);
+
+      digitalWrite(BLDC[0][1], HIGH);
+      digitalWrite(BLDC[1][1], LOW);
+      digitalWrite(BLDC[2][1], HIGH);
+      break;
+
+    case 3:  // V→U
+      analogWrite(BLDC[0][0], 0);
+      analogWrite(BLDC[1][0], _power);
+      analogWrite(BLDC[2][0], 0);
+
+      digitalWrite(BLDC[0][1], HIGH);
+      digitalWrite(BLDC[1][1], HIGH);
+      digitalWrite(BLDC[2][1], LOW);
+      break;
+
+    case 4:  // V→W
+      analogWrite(BLDC[0][0], 0);
+      analogWrite(BLDC[1][0], _power);
+      analogWrite(BLDC[2][0], 0);
+
+      digitalWrite(BLDC[0][1], LOW);
+      digitalWrite(BLDC[1][1], HIGH);
+      digitalWrite(BLDC[2][1], HIGH);
+      break;
+
+    case 5:  // U→W
+      analogWrite(BLDC[0][0], _power);
+      analogWrite(BLDC[1][0], 0);
+      analogWrite(BLDC[2][0], 0);
+
+      digitalWrite(BLDC[0][1], HIGH);
+      digitalWrite(BLDC[1][1], LOW);
+      digitalWrite(BLDC[2][1], HIGH);
+      break;
+  }
+}
+
+ISR (TIMER1_COMPA_vect) {
+  
+}
