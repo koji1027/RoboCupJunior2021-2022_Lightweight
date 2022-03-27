@@ -11,7 +11,7 @@ void SD_HIGH();
 
 bool flag = 0;
 bool turn = 1;
-uint8_t power = 70;
+uint8_t power = 50;
 uint16_t offset[2] = {289,288};
 uint16_t shinkaku [2]= {170,495};
 int drive = 0;
@@ -85,7 +85,7 @@ void initialization() {
     }
     delay(1500);
     Serial.println("Start");
-    TIMSK5 |= (1 << OCIE5A); //割り込みA開始
+    //TIMSK5 |= (1 << OCIE5A); //割り込みA開始
 }
 
 ISR (SPI_STC_vect) {
@@ -103,8 +103,7 @@ ISR (SPI_STC_vect) {
 }
 
 ISR (TIMER5_COMPA_vect) {
-  turn = not(turn);
-  //TIMSK5 |= (1 << OCIE5B);
+  TIMSK5 |= (1 << OCIE5B);
 }
 
 ISR (TIMER5_COMPB_vect) {
