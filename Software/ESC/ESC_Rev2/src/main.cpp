@@ -10,9 +10,9 @@ void DriveMotor(int _drive,int _power);
 void SD_HIGH();
 void calibration();
 
-bool stop_flag = 0; //0:回転可 1:強制停止
-bool turn = 1;
-uint8_t power = 0;
+bool stop_flag = 0; //0:回転可 1:強制停止(ブレーキ)
+bool turn = 1; //1:正転(時計回り) 0:逆転(反時計回り)
+uint8_t power = 0; //0から255 
 uint16_t offset = 206;
 uint16_t shinkaku [2]= {50,300};//170 //495
 uint16_t drive = 0;
@@ -87,6 +87,11 @@ void initialization() {
 
     Serial.begin(115200);
 
+    //SPI
+    SPCR |= bit(SPE);
+    pinMode(MISO,OUTPUT);
+    SPI.attachInterrupt();
+
     //タイマー割込み
     //絶対消さない!!!!!
     /*TCCR5A  = 0;
@@ -109,10 +114,10 @@ void initialization() {
     //TIMSK5 |= (1 << OCIE5A); //割り込みA開始
 }
 
-ISR (SPI_STC_vect) {
+ISR (SPI_STC_vect) { //まず、SPIで253から255の範囲でデーターを送る。次に0から255の範囲でスピードのデータを送る
   byte data = SPDR;
   switch (data) {
-    case 255:
+    case 255://正転(時計回り)
       if (stop_flag) {
         stop_flag = false;
       }
@@ -125,7 +130,7 @@ ISR (SPI_STC_vect) {
       }
       break;
   
-    case 254:
+    case 254://逆転(反時計回り)
       if (stop_flag) {
         stop_flag = false;
       }
@@ -138,7 +143,7 @@ ISR (SPI_STC_vect) {
       }
       break;
   
-    case 253:
+    case 253://ブレーキ
       stop_flag = true;
       break;
   
