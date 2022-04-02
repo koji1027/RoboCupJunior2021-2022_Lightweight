@@ -4,17 +4,21 @@
 #define AS5600_DEV_ADDRESS   0x36
 #define AS5600_REG_RAW_ANGLE 0x0C
 
-const int BLDC[3][2] = {{3,4},{5,6},{7,8}};
+const int BLDC[3][2] = {{3,4},{5,7},{6,8}}; //Arduino Uno
+//const int BLDC[3][2] = {{3,4},{5,6},{7,8}};
 float pwm[360];
 
 void DriveMotor(int _drive,int _power) {
-  int power1 = (int)((_power / 2.0) * pwm[_drive] + (_power / 2.0));
-  int power2 = (int)((_power / 2.0) * pwm[(_drive + 120) % 360] + (_power / 2.0));
-  int power3 = (int)((_power / 2.0) * pwm[(_drive + 240) % 360] + (_power / 2.0));
-  analogWrite(BLDC[0][0], power1);  // U_IN
-  analogWrite(BLDC[1][0], power2);       // V_IN
-  analogWrite(BLDC[2][0], power3);  
-  //delayMicroseconds(500);
+  uint8_t power0 = (uint8_t)((_power / 2.0) * pwm[_drive] + (_power / 2.0));
+  uint8_t power1 = (uint8_t)((_power / 2.0) * pwm[(_drive + 120) % 360] + (_power / 2.0));
+  uint8_t power2 = (uint8_t)((_power / 2.0) * pwm[(_drive + 240) % 360] + (_power / 2.0));
+  analogWrite(BLDC[0][0], power0);  // U_IN
+  analogWrite(BLDC[1][0], power1);       // V_IN
+  analogWrite(BLDC[2][0], power2);  
+}
+
+void Stop() {
+  DriveMotor(0,40);
 }
 
 void SD_HIGH() {

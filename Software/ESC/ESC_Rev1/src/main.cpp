@@ -11,8 +11,6 @@
 
 #define I2C_Clock 4000000
 
-int count = 0;
-
 uint8_t power = 50;
 bool turn = 1; //true(1) 正転 / false(0) 逆転
 int drive = 0;
@@ -31,19 +29,11 @@ void motor_control(uint8_t _step,uint8_t _power);
 void setup() {
   // put your setup code here, to run once:
   initialization();
-  delay(500);
-  //offset = calibration();
+  delay(32000);
+  offset = calibration();
 }
 
 void loop() {
-  if (flag1) {
-    val1 = EncoderRead();
-    flag1 = 0;
-  }
-  if (flag2) {
-    val2 = EncoderRead();
-    flag2 = 0;
-  }
   int Angle = EncoderRead();
   Angle -= offset;
   Angle += 4096 * 2;
@@ -71,8 +61,9 @@ void loop() {
 
 void initialization() {
   //pwm
-  //TCCR0B = (TCCR2B & 0b11111000) | 0x01;  // 31.37255 [kHz]
-  //TCCR1B = (TCCR3B & 0b11111000) | 0x01;  // 31.37255 [kHz] //Arduino Uno
+  /*TCCR0B = (TCCR0B & 0b11111000) | 0x01;  // 31.37255 [kHz]
+  TCCR2B = (TCCR2B & 0b11111000) | 0x01;*/  // 31.37255 [kHz] //Arduino Uno
+  TCCR2B = (TCCR2B & 0b11111000) | 0x01;  // 31.37255 [kHz]
   TCCR3B = (TCCR3B & 0b11111000) | 0x01;  // 31.37255 [kHz]
   TCCR4B = (TCCR4B & 0b11111000) | 0x01;  // 31.37255 [kHz] //Arduino Mega
 
@@ -82,11 +73,11 @@ void initialization() {
 
   //タイマー割込み
   //絶対消さない!!!!!
-  TCCR5A  = 0;
+  /*TCCR5A  = 0;
   TCCR5B  = 0;
   TCCR5B |= (1 << WGM52) | (1 << CS52);  //CTCmode //prescaler to 256
   OCR5A   = 62500-1;
-  OCR5B   = 3125-1;
+  OCR5B   = 3125-1;*/
 
   //Serial
   Serial.begin(115200);
@@ -107,7 +98,7 @@ void initialization() {
     digitalWrite(BLDC[i][1],HIGH);
   }
   stop_motor();
-  delay(1500);
+  delay(64000);
   Serial.println("Start");
   //TIMSK5 |= (1 << OCIE5A);
 }
@@ -138,11 +129,11 @@ ISR (SPI_STC_vect) {
   }
 }
 
-ISR (TIMER5_COMPA_vect) {
+/*ISR (TIMER5_COMPA_vect) {
   //TIMSK5 |= (1 << OCIE5B);
 }
 
 ISR (TIMER5_COMPB_vect) {
   flag2 = 1;
   TIMSK5 |= (0 << OCIE5B);
-}
+}*/
