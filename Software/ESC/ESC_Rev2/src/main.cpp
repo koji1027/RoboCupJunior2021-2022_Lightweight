@@ -13,7 +13,7 @@ uint16_t calibration();
 bool stop_flag = 0; //0:回転可 1:強制停止(ブレーキ)
 bool turn = 1; //1:正転(時計回り) 0:逆転(反時計回り)
 uint8_t power = 50; //0から255 
-uint16_t offset = 441;
+uint16_t offset = 13;//441,586
 uint16_t shinkaku [2]= {50,300};//170 //495
 uint16_t drive = 0;
 
@@ -82,7 +82,6 @@ uint16_t calibration(void) {
     motor_control_trapezoid(i % 6,30);
     delay(32000);
   }
-  Serial.println("Yo");
   motor_control_trapezoid(5, 30);
   delay(19200);
   motor_control_trapezoid(0, 30);
@@ -122,10 +121,10 @@ void initialization() {
     Serial.begin(115200);
 
     //SPI
-    pinMode(9,OUTPUT);
+    /*pinMode(9,OUTPUT);
     SPCR |= bit(SPE);
     pinMode(MISO,OUTPUT);
-    SPI.attachInterrupt();
+    SPI.attachInterrupt();*/
 
     //タイマー割込み
     //絶対消さない!!!!!
@@ -149,7 +148,7 @@ void initialization() {
     //TIMSK5 |= (1 << OCIE5A); //割り込みA開始
 }
 
-/*ISR (SPI_STC_vect) {
+ISR (SPI_STC_vect) {
   byte data = SPDR;
   if (data <= 100) {
     data *= 2;
@@ -173,7 +172,7 @@ void initialization() {
     }
     turn = false;
   }
-}*/
+}
 
 /*ISR (SPI_STC_vect) { //まず、SPIで253から255の範囲でデーターを送る。次に0から255の範囲でスピードのデータを送る
   byte data = SPDR;
