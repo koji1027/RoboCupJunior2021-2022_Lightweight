@@ -5,7 +5,7 @@
 #define AS5600_REG_RAW_ANGLE 0x0C
 
 uint16_t offset = 731;
-const int BLDC[3][2] = {{3,2},{5,4},{6,7}}; //Arduino Uno
+const int BLDC[3][2] = {{3,4},{5,7},{6,8}}; //Arduino Uno
 //const int BLDC[3][2] = {{3,4},{5,6},{7,8}}; //Arduino Mega
 
 void motor_control(uint8_t _step, uint8_t _power) {

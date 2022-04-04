@@ -31,9 +31,12 @@ void setup() {
   initialization();
   delay(32000);
   offset = calibration();
+  //pinMode(9,OUTPUT);
+  //digitalWrite(9,LOW);
 }
 
 void loop() {
+  //digitalWrite(9,HIGH);
   int Angle = EncoderRead();
   Angle -= offset;
   Angle += 4096 * 2;
@@ -61,11 +64,11 @@ void loop() {
 
 void initialization() {
   //pwm
-  /*TCCR0B = (TCCR0B & 0b11111000) | 0x01;  // 31.37255 [kHz]
-  TCCR2B = (TCCR2B & 0b11111000) | 0x01;*/  // 31.37255 [kHz] //Arduino Uno
-  TCCR2B = (TCCR2B & 0b11111000) | 0x01;  // 31.37255 [kHz]
-  TCCR3B = (TCCR3B & 0b11111000) | 0x01;  // 31.37255 [kHz]
-  TCCR4B = (TCCR4B & 0b11111000) | 0x01;  // 31.37255 [kHz] //Arduino Mega
+  TCCR0B = (TCCR0B & 0b11111000) | 0x01;  // 31.37255 [kHz]
+  TCCR2B = (TCCR2B & 0b11111000) | 0x01;  // 31.37255 [kHz] //Arduino Uno
+  //TCCR2B = (TCCR2B & 0b11111000) | 0x01;  // 31.37255 [kHz]
+  //TCCR3B = (TCCR3B & 0b11111000) | 0x01;  // 31.37255 [kHz]
+  //TCCR4B = (TCCR4B & 0b11111000) | 0x01;  // 31.37255 [kHz] //Arduino Mega
 
   //I2C
   Wire.begin();
