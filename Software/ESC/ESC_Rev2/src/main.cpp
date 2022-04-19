@@ -12,9 +12,9 @@ uint16_t calibration();
 
 bool stop_flag = 0; //0:回転可 1:強制停止(ブレーキ)
 bool turn = 1; //1:正転(時計回り) 0:逆転(反時計回り)
-uint8_t power = 50; //0から255 
-uint16_t offset = 13;//441,586
-uint16_t shinkaku [2]= {50,300};//170 //495
+uint8_t power = 0; //0から255 
+uint16_t Offset = 629;//441,586,13
+uint16_t shinkaku [2]= {90,90};//50 //300
 uint16_t drive = 0;
 
 void setup() {
@@ -23,49 +23,29 @@ void setup() {
       pwm[i] = sin(radians(i));
     }
     SD_HIGH();
-    //offset = calibration();
+    Offset = calibration();
 }
 
 void loop() {
-  /*while (1) {
-    for (int i = 0;i < 360;i++) {
-      DriveMotor(i,50);
-      delayMicroseconds(10);
-    }
-    delay(300 * 64);
-    DriveMotor(0,50);
-    delay(300 * 64);
-    int data = EncoderRead();
-    data += 4096 * 2;
-    data -= offset;
-    data %= 4096;
-    drive = data % 585;
-    drive = map(drive,0,587,0,359);
-    drive += 360 * 2;
-    drive -= shinkaku[0];
-    drive %= 360;
-    Serial.print("data : ");
-    Serial.print(data);
-    Serial.print(" ,drive : ");
-    Serial.println(drive);
-    delay(9000);
-  }*/
+  while (stop_flag) {
+    Stop();
+  }
+  
   if (turn) {
     uint16_t Angle = EncoderRead();
     Angle += 4096 * 2;
-    Angle -= offset;
+    Angle -= Offset;
     Angle %= 4096;
     drive = Angle % 585;
     drive = map(drive,0,587,0,359);
-    drive += 360 * 2;
-    drive -= shinkaku[0];
+    drive += shinkaku[0];
     drive %= 360;
     DriveMotor(drive,power);
   }
   else {
     uint16_t Angle = EncoderRead();
     Angle += 4096 * 2;
-    Angle -= offset;
+    Angle -= Offset;
     Angle %= 4096;
     drive = Angle % 585;
     drive = map(drive,0,587,0,359);
@@ -77,33 +57,25 @@ void loop() {
 }
 
 uint16_t calibration(void) {
-  int offsetRaw[] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-  for (int i = 6;i > -1;i--) {
-    motor_control_trapezoid(i % 6,30);
-    delay(32000);
+  uint16_t _Angle[4] = {0,0};
+  for (uint16_t j = 0;j < 360;j++) {
+    DriveMotor(j,40);
+    delayMicroseconds(3);
   }
-  motor_control_trapezoid(5, 30);
-  delay(19200);
-  motor_control_trapezoid(0, 30);
-  delay(32000);
-  offsetRaw[0] = EncoderRead();
-  motor_control_trapezoid(1, 30);
-  delay(19200);
-  motor_control_trapezoid(0, 30);
-  delay(32000);
-  offsetRaw[1] = EncoderRead();
-  motor_control_trapezoid(5, 30);
-  delay(19200);
-  motor_control_trapezoid(0, 30);
-  delay(32000);
-  offsetRaw[2] = EncoderRead();
-  motor_control_trapezoid(1, 30);
-  delay(19200);
-  motor_control_trapezoid(0, 30);
-  delay(32000);
-  offsetRaw[3] = EncoderRead();
-  motor_control_trapezoid(0,0);
-  return (offsetRaw[0] + offsetRaw[1] + offsetRaw[2] + offsetRaw[3]) / 4;
+  DriveMotor(0,40);
+  delay(150 * 64);
+  _Angle[0] = EncoderRead();
+  delay(100 * 64);
+  for (uint16_t j = 359;j > 0;j--) {
+    DriveMotor(j,40);
+    delayMicroseconds(3);
+  }
+  DriveMotor(0,40);
+  delay(150 * 64);
+  _Angle[1] = EncoderRead();
+  delay(100 * 64);
+  uint16_t _Offset = (uint16_t)((_Angle[0] + _Angle[1]) / 2.0);
+  return _Offset;
 }
 
 void initialization() {
@@ -121,10 +93,10 @@ void initialization() {
     Serial.begin(115200);
 
     //SPI
-    /*pinMode(9,OUTPUT);
+    pinMode(9,OUTPUT);
     SPCR |= bit(SPE);
     pinMode(MISO,OUTPUT);
-    SPI.attachInterrupt();*/
+    SPI.attachInterrupt();
 
     //タイマー割込み
     //絶対消さない!!!!!
@@ -144,7 +116,7 @@ void initialization() {
       analogWrite(BLDC[i][0],0);
       digitalWrite(BLDC[i][1],HIGH);
     }
-    delay(300 * 64);
+    delay(100 * 64);
     //TIMSK5 |= (1 << OCIE5A); //割り込みA開始
 }
 
@@ -171,6 +143,9 @@ ISR (SPI_STC_vect) {
       }
     }
     turn = false;
+  }
+  else if (data == 253) {
+    Stop();
   }
 }
 

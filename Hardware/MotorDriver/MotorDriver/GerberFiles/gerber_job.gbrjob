@@ -1,0 +1,24 @@
+{
+    "Header": {
+        "Comment": "All values are metric (mm)",
+        "CreationDate": "2022-04-13T22:01:03Z",
+        "GenerationSoftware": {
+            "Application": "EAGLE",
+            "Vendor": "Autodesk",
+            "Version": "9.7.0"
+        },
+        "Part": "Single"
+    },
+    "Overall": {
+        "BoardThickness": 1.57,
+        "LayerNumber": 2,
+        "Name": {
+            "ProjectId": "モータードライバ v24"
+        },
+        "Owner": "孝次 根岸 <nkoji.personal@gmail.com>",
+        "Size": {
+            "X": 39.9973,
+            "Y": 60
+        }
+    }
+}

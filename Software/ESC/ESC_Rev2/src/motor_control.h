@@ -5,7 +5,7 @@
 #define AS5600_REG_RAW_ANGLE 0x0C
 
 const int BLDC[3][2] = {{3,4},{5,7},{6,8}}; //Arduino Uno
-//const int BLDC[3][2] = {{3,4},{5,6},{7,8}};
+
 float pwm[360];
 
 void DriveMotor(int _drive,int _power) {
@@ -22,9 +22,9 @@ void Stop() {
 }
 
 void SD_HIGH() {
-  digitalWrite(BLDC[0][1], HIGH);  // V_SD
-  digitalWrite(BLDC[1][1], HIGH);   // V_IN
-  digitalWrite(BLDC[2][1], HIGH);
+  for (uint8_t i = 0;i < 3;i++) {
+    digitalWrite(BLDC[i][1],HIGH);
+  }
 }
 
 void motor_control_trapezoid(uint8_t _step, uint8_t _power) {
