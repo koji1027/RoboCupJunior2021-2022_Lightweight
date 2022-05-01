@@ -1,7 +1,7 @@
 #include <SPI.h>
 #include <Arduino.h>
 #include <stdint.h>
-#include <motor_control.h>
+#include "C:\Users\nkoji\Documents\GitHub\RoboCupJunior2023_Lightweight\Software\ESC\ESC_Rev2\src\motor_control.h"
 
 #define I2C_Clock 8000000
 
@@ -12,7 +12,7 @@ uint16_t calibration();
 
 bool stop_flag = 0; //0:回転可 1:強制停止(ブレーキ)
 bool turn = 1; //1:正転(時計回り) 0:逆転(反時計回り)
-uint8_t power = 40; //0から255 
+uint8_t power = 0; //0から255 
 uint16_t Offset = 629;//441,586,13
 uint16_t shinkaku [2]= {90,90};//50 //300
 uint16_t drive = 0;
